@@ -18,7 +18,7 @@ app.use(express.json());
 
 // ---- Settings (loaded from your .env file / host dashboard) ----
 const PORT = process.env.PORT || 3000;
-const CAL_API_KEY = process.env.CAL_API_KEY; // from cal.com → Settings → API Keys
+const CAL_API_KEY = process.env.CAL_API_KEY; // from cal.eu → Settings → API Keys
 const CAL_EVENT_TYPE_ID = process.env.CAL_EVENT_TYPE_ID; // the numeric ID of your booking type
 const BUSINESS_TIMEZONE = process.env.BUSINESS_TIMEZONE || "Europe/London";
 const BUSINESS_EMAIL = process.env.BUSINESS_EMAIL; // where notes & callback requests are sent
@@ -52,10 +52,10 @@ async function emailBusiness(subject, text) {
   return { ok: res.ok };
 }
 
-// Ask Cal.com which slots are free on a given date (YYYY-MM-DD)
+// Ask Cal.eu which slots are free on a given date (YYYY-MM-DD)
 async function getAvailableSlots(date) {
   const url =
-    `https://api.cal.com/v2/slots?eventTypeId=${CAL_EVENT_TYPE_ID}` +
+    `https://api.cal.eu/v2/slots?eventTypeId=${CAL_EVENT_TYPE_ID}` +
     `&start=${date}&end=${date}&timeZone=${encodeURIComponent(BUSINESS_TIMEZONE)}`;
   const res = await fetch(url, {
     headers: {
@@ -65,7 +65,7 @@ async function getAvailableSlots(date) {
   });
   if (!res.ok) {
     const body = await res.text();
-    console.error("Cal.com slots error:", res.status, body);
+    console.error("Cal.eu slots error:", res.status, body);
     return null;
   }
   const data = await res.json();
@@ -75,9 +75,9 @@ async function getAvailableSlots(date) {
   return slots.map((s) => (typeof s === "string" ? s : s.start));
 }
 
-// Create a booking in Cal.com
+// Create a booking in Cal.eu
 async function createBooking({ name, phone, email, startISO }) {
-  const res = await fetch("https://api.cal.com/v2/bookings", {
+  const res = await fetch("https://api.cal.eu/v2/bookings", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${CAL_API_KEY}`,
@@ -98,7 +98,7 @@ async function createBooking({ name, phone, email, startISO }) {
   });
   if (!res.ok) {
     const body = await res.text();
-    console.error("Cal.com booking error:", res.status, body);
+    console.error("Cal.eu booking error:", res.status, body);
     return { ok: false };
   }
   return { ok: true };
@@ -107,7 +107,7 @@ async function createBooking({ name, phone, email, startISO }) {
 // Turn a date + time into an ISO timestamp in UTC for the business timezone.
 // Keeps things simple: expects date "YYYY-MM-DD" and time "HH:MM" (24h).
 function toISO(date, time) {
-  // We let Cal.com interpret using the attendee timeZone, but bookings
+  // We let Cal.eu interpret using the attendee timeZone, but bookings
   // need a UTC instant. Build it from the local wall-clock time:
   const local = new Date(`${date}T${time}:00`);
   // Adjust from server time to the business timezone using Intl:
